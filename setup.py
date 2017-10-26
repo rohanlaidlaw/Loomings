@@ -34,6 +34,7 @@ SCREEN_WIDTH = 80
 SCREEN_HEIGHT = 50
 LIMIT_FPS = 20  # 20 frames-per-second maximum
 libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'Loomings', False)
+con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 libtcod.sys_set_fps(LIMIT_FPS)
 
 player_x = SCREEN_WIDTH / 2
@@ -46,11 +47,12 @@ while not libtcod.console_is_window_closed():
 
     # Draw the Player --------------------------------------------------------------------------------------------------
     libtcod.console_set_default_foreground(0, libtcod.white)
-    libtcod.console_put_char(0, player_x, player_y, '@', libtcod.BKGND_NONE)
+    libtcod.console_put_char(con, player_x, player_y, '@', libtcod.BKGND_NONE)
 
+    libtcod.console_blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
     libtcod.console_flush()
 
-    libtcod.console_put_char(0, player_x, player_y, ' ', libtcod.BKGND_NONE)
+    libtcod.console_put_char(con, player_x, player_y, ' ', libtcod.BKGND_NONE)
 
     exit = handle_keys()
     if exit:
