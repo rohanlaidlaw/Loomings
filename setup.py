@@ -1,4 +1,5 @@
 import libtcodpy as libtcod
+import screen
 
 ########################################################################################################################
 # CLASSES ##############################################################################################################
@@ -17,11 +18,11 @@ class Object:
             self.y += dy
 
     def draw(self):
-        libtcod.console_set_default_foreground(con, self.color)
-        libtcod.console_put_char(con, self.x, self.y, self.char, libtcod.BKGND_NONE)
+        libtcod.console_set_default_foreground(screen.con, self.color)
+        libtcod.console_put_char(screen.con, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
     def clear(self):
-        libtcod.console_put_char(con, self.x, self.y, ' ', libtcod.BKGND_NONE)
+        libtcod.console_put_char(screen.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
 
 class Tile:
     def __init__(self, blocked, block_sight=None):
@@ -63,8 +64,8 @@ def make_map():
     global map
 
     map = [[Tile(False)
-            for y in range(MAP_HEIGHT)]
-           for x in range(MAP_WIDTH)]
+            for y in range(screen.MAP_HEIGHT)]
+           for x in range(screen.MAP_WIDTH)]
     map[30][22].blocked = True
     map[30][22].block_sight = True
     map[50][22].blocked = True
@@ -74,47 +75,28 @@ def render_all():
     global color_light_wall
     global color_light_ground
 
-    for y in range(MAP_HEIGHT):
-        for x in range(MAP_WIDTH):
+    for y in range(screen.MAP_HEIGHT):
+        for x in range(screen.MAP_WIDTH):
             wall = map[x][y].block_sight
             if wall:
-                libtcod.console_set_char_background(con, x, y, color_dark_wall, libtcod.BKGND_SET)
+                libtcod.console_set_char_background(screen.con, x, y, screen.color_dark_wall, libtcod.BKGND_SET)
             else:
-                libtcod.console_set_char_background(con, x, y, color_dark_ground, libtcod.BKGND_SET)
+                libtcod.console_set_char_background(screen.con, x, y, screen.color_dark_ground, libtcod.BKGND_SET)
 
     for object in objects:
         object.draw()
 
-    libtcod.console_blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
+    libtcod.console_blit(screen.con, 0, 0, screen.SCREEN_WIDTH, screen.SCREEN_HEIGHT, 0, 0, 0)
 
 ########################################################################################################################
 # GENERAL SET UP #######################################################################################################
 ########################################################################################################################
 
-SCREEN_WIDTH = 80
-SCREEN_HEIGHT = 50
-
-MAP_WIDTH = 80
-MAP_HEIGHT = 45
-
-#Sets the colour of the tiles out of the player's line of sight
-color_dark_wall = libtcod.Color(0, 0, 100)
-color_dark_ground = libtcod.Color(50, 50, 150)
-
-LIMIT_FPS = 20
-
-#The bedrock layer of the library's screen handling. Where the UI and panels are drawn
-libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'Loomings', False)
-
-#A buffer console whereupon the sprites will be written is drawn over the root console
-con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
-libtcod.sys_set_fps(LIMIT_FPS)
-
 #Create the player using the Object class
-player = Object(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, '@', libtcod.white)
+player = Object(screen.SCREEN_WIDTH/2, screen.SCREEN_HEIGHT/2, '@', libtcod.white)
 
 #Create a test npc using the Object class
-npc = Object(SCREEN_WIDTH/2 - 5, SCREEN_HEIGHT/2, '@', libtcod.yellow)
+npc = Object(screen.SCREEN_WIDTH/2 - 5, screen.SCREEN_HEIGHT/2, '@', libtcod.yellow)
 
 #Initialize an array containing hitherto created objects
 objects = [npc, player]
