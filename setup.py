@@ -120,22 +120,3 @@ npc = Object(SCREEN_WIDTH/2 - 5, SCREEN_HEIGHT/2, '@', libtcod.yellow)
 objects = [npc, player]
 
 make_map()
-
-########################################################################################################################
-# PRIMARY EVENT LOOP ###################################################################################################
-########################################################################################################################
-
-while not libtcod.console_is_window_closed():
-    render_all()
-
-#Refreshes the screen (console in the library's parlance)
-    libtcod.console_flush()
-
-#Every object in the array objects is cleared, for purposes of refreshing and rerendering
-    for object in objects:
-        object.clear()
-
-#If the exit key is detected, the loop is broken from, thereby ending the game
-    exit = handle_keys()
-    if exit:
-        break
