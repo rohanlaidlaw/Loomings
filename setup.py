@@ -1,23 +1,45 @@
 import libtcodpy as libtcod
 import constants
+import math
 
 ########################################################################################################################
 # CLASSES ##############################################################################################################
 ########################################################################################################################
 
 class Object:
-    def __init__(self, x, y, char, name, color, blocks=False):
+    def __init__(self, x, y, char, name, color, blocks=False, ai=None):
         self.name = name
         self.blocks = blocks
         self.x = x
         self.y = y
         self.char = char
         self.color = color
+        self.ai = ai
+        if self.ai:  #let the AI component know who owns it
+            self.ai.owner = self
 
     def move(self, dx, dy):
         if not is_blocked(self.x + dx, self.y + dy):
             self.x += dx
             self.y += dy
+
+    def move_towards(self, target_x, target_y):
+        # vector from this object to the target, and distance
+        dx = target_x - self.x
+        dy = target_y - self.y
+        distance = math.sqrt(dx ** 2 + dy ** 2)
+
+        # normalize it to length 1 (preserving direction), then round it and
+        # convert to integer so the movement is restricted to the map grid
+        dx = int(round(dx / distance))
+        dy = int(round(dy / distance))
+        self.move(dx, dy)
+
+    def distance_to(self, other):
+        # return the distance to another object
+        dx = other.x - self.x
+        dy = other.y - self.y
+        return math.sqrt(dx ** 2 + dy ** 2)
 
     def draw(self):
         if libtcod.map_is_in_fov(fov_map, self.x, self.y):
@@ -26,6 +48,11 @@ class Object:
 
     def clear(self):
         libtcod.console_put_char(constants.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
+
+class BasicNPC:
+    #AI for a basic monster.
+    def take_turn(self):
+        print 'The ' + self.owner.name + ' growls!'
 
 class Tile:
     def __init__(self, blocked, block_sight=None):
@@ -70,6 +97,28 @@ def handle_keys():
 # FUNCTIONS ############################################################################################################
 ########################################################################################################################
 
+def place_objects(room):
+    # choose random number of monsters
+    num_monsters = libtcod.random_get_int(0, 0, constants.MAX_ROOM_MONSTERS)
+
+    for i in range(num_monsters):
+        # choose random spot for this monster
+        x = libtcod.random_get_int(0, room.x1, room.x2)
+        y = libtcod.random_get_int(0, room.y1, room.y2)
+
+        # only place it if the tile is not blocked
+        if not is_blocked(x, y):
+            if libtcod.random_get_int(0, 0, 100) < 80:  # 80% chance of getting an orc
+                # create an orc
+                monster = Object(x, y, 'o', 'orc', libtcod.desaturated_green,
+                                 blocks=True)
+            else:
+                # create a troll
+                monster = Object(x, y, 'T', 'troll', libtcod.darker_green,
+                                 blocks=True)
+
+            objects.append(monster)
+
 def is_blocked(x, y):
     # first test the map tile
     if map[x][y].blocked:
@@ -81,7 +130,6 @@ def is_blocked(x, y):
             return True
 
     return False
-
 
 def player_move_or_attack(dx, dy):
     global fov_recompute
@@ -202,6 +250,7 @@ def make_map():
                     create_h_tunnel(prev_x, new_x, new_y)
 
             # finally, append the new room to the list
+            place_objects(new_room)
             rooms.append(new_room)
             num_rooms += 1
 

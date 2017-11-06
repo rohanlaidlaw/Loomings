@@ -1,4 +1,5 @@
 import libtcodpy as libtcod
+import setup
 from setup import render_all
 from setup import objects
 from setup import handle_keys
@@ -17,3 +18,8 @@ while not libtcod.console_is_window_closed():
     player_action = handle_keys()
     if player_action == 'exit':
         break
+
+    if setup.game_state == 'playing' and player_action != 'didnt-take-turn':
+        for object in objects:
+            if object != setup.player:
+                print 'The ' + object.name + ' growls!'
