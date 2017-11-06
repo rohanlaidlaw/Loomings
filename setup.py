@@ -44,12 +44,20 @@ class Object:
         return math.sqrt(dx ** 2 + dy ** 2)
 
     def draw(self):
+        # only show if it's visible to the player
         if libtcod.map_is_in_fov(fov_map, self.x, self.y):
-            libtcod.console_set_default_foreground(const.con, self.color)
-            libtcod.console_put_char(const.con, self.x, self.y, self.char, libtcod.BKGND_NONE)
+            (x, y) = to_camera_coordinates(self.x, self.y)
+
+            if x is not None:
+                # set the color and then draw the character that represents this object at its position
+                libtcod.console_set_default_foreground(const.con, self.color)
+                libtcod.console_put_char(const.con, x, y, self.char, libtcod.BKGND_NONE)
 
     def clear(self):
-        libtcod.console_put_char(const.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
+        # erase the character that represents this object
+        (x, y) = to_camera_coordinates(self.x, self.y)
+        if x is not None:
+            libtcod.console_put_char(const.con, x, y, ' ', libtcod.BKGND_NONE)
 
 class Object:
     def __init__(self, x, y, char, name, color, blocks=False, ai=None):
@@ -134,8 +142,8 @@ def handle_keys():
                         look_cursor.x = player.x
                         look_cursor.y = player.y
             elif looking:
-                look_cursor.x = -1
-                look_cursor.y = -1
+                look_cursor.x = -100
+                look_cursor.y = -100
                 looking = False
 
     elif key.vk == libtcod.KEY_ESCAPE:
@@ -225,6 +233,7 @@ def looking_oracle():
 
     # return a string with the names of all objects under the mouse
     (x, y) = (look_cursor.x, look_cursor.y)
+    (x, y) = (camera_x + x, camera_y + y)
 
     #create a list with the names of all objects at the looking coordinates and in FOV
     names = [obj.name for obj in objects
@@ -459,36 +468,73 @@ def make_map():
             rooms.append(new_room)
             num_rooms += 1
 
+
+def move_camera(target_x, target_y):
+    global camera_x, camera_y, fov_recompute
+
+    # new camera coordinates (top-left corner of the screen relative to the map)
+    x = (target_x - const.CAMERA_WIDTH) / 2  # coordinates so that the target is at the center of the screen
+    y = (target_y - const.CAMERA_HEIGHT) / 2
+
+    # make sure the camera doesn't see outside the map
+    if x < 0: x = 0
+    if y < 0: y = 0
+    if x > const.MAP_WIDTH - const.CAMERA_WIDTH - 1: x = const.MAP_WIDTH - const.CAMERA_WIDTH - 1
+    if y > const.MAP_HEIGHT - const.CAMERA_HEIGHT - 1: y = const.MAP_HEIGHT - const.CAMERA_HEIGHT - 1
+
+    if x != camera_x or y != camera_y: fov_recompute = True
+
+    (camera_x, camera_y) = (x, y)
+
+def to_camera_coordinates(x, y):
+    # convert coordinates on the map to coordinates on the screen
+    (x, y) = (x - camera_x, y - camera_y)
+
+    if (x < 0 or y < 0 or x >= const.CAMERA_WIDTH or y >= const.CAMERA_HEIGHT):
+        return (None, None)  # if it's outside the view, return nothing
+
+    return (x, y)
+
 def render_all():
     global fov_map, color_dark_wall, color_light_wall
     global color_dark_ground, color_light_ground
     global fov_recompute
 
+    move_camera(player.x, player.y)
+
     if fov_recompute:
+        # recompute FOV if needed (the player moved or something)
         fov_recompute = False
         libtcod.map_compute_fov(fov_map, player.x, player.y, const.TORCH_RADIUS, const.FOV_LIGHT_WALLS, const.FOV_ALGO)
+        libtcod.console_clear(const.con)
 
-        for y in range(const.MAP_HEIGHT):
-            for x in range(const.MAP_WIDTH):
-                visible = libtcod.map_is_in_fov(fov_map, x, y)
-                wall = map[x][y].block_sight
+        # go through all tiles, and set their background color according to the FOV
+        for y in range(const.CAMERA_HEIGHT):
+            for x in range(const.CAMERA_WIDTH):
+                (map_x, map_y) = (camera_x + x, camera_y + y)
+                visible = libtcod.map_is_in_fov(fov_map, map_x, map_y)
+
+                wall = map[map_x][map_y].block_sight
                 if not visible:
-                    if map[x][y].explored:
-                        #it's out of the player's FOV
+                    # if it's not visible right now, the player can only see it if it's explored
+                    if map[map_x][map_y].explored:
                         if wall:
                             libtcod.console_set_char_background(const.con, x, y, const.color_dark_wall, libtcod.BKGND_SET)
                         else:
                             libtcod.console_set_char_background(const.con, x, y, const.color_dark_ground, libtcod.BKGND_SET)
                 else:
-                    #it's visible
+                    # it's visible
                     if wall:
                         libtcod.console_set_char_background(const.con, x, y, const.color_light_wall, libtcod.BKGND_SET)
                     else:
                         libtcod.console_set_char_background(const.con, x, y, const.color_light_ground, libtcod.BKGND_SET)
-                    map[x][y].explored = True
+                    # since it's visible, explore it
+                    map[map_x][map_y].explored = True
 
     for object in objects:
-        object.draw()
+        if object != player:
+            object.draw()
+    player.draw()
     look_cursor.draw()
 
     libtcod.console_blit(const.con, 0, 0, const.SCREEN_WIDTH, const.SCREEN_HEIGHT, 0, 0, 0)
@@ -533,8 +579,8 @@ def new_game():
     global player, look_cursor, looking, inventory, game_msgs, game_state
 
     # create object representing the player
-    player = Object(25, 23, '@', 'player', libtcod.white, blocks=True)
-    look_cursor = Object(-1, -1, 'X', 'look', libtcod.yellow, blocks=False)
+    player = Object(0, 0, '@', 'player', libtcod.white, blocks=True)
+    look_cursor = Object(0, 0, 'X', 'look', libtcod.yellow, blocks=False)
 
     # generate map (at this point it's not drawn to the screen)
     make_map()
@@ -608,8 +654,11 @@ def main_menu():
             break
 
 def play_game():
+    global camera_x, camera_y, player_x, player_y
 
     player_action = None
+
+    (camera_x, camera_y) = (0, 0)
 
     while not libtcod.console_is_window_closed():
         # render the screen
