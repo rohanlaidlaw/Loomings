@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d7905429-e866-4c3e-8066-f500ebb4e8aa" name="Default" comment="">
-      <change type="MOVED" beforePath="$PROJECT_DIR$/screen.py" afterPath="$PROJECT_DIR$/constants.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gameloop.py" afterPath="$PROJECT_DIR$/gameloop.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/setup.py" afterPath="$PROJECT_DIR$/setup.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -15,7 +13,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/Loomings$gameloop.coverage" NAME="gameloop Coverage Results" MODIFIED="1509935878208" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Loomings$gameloop.coverage" NAME="gameloop Coverage Results" MODIFIED="1509937078527" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Loomings$setup.coverage" NAME="setup Coverage Results" MODIFIED="1509935773657" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Loomings$rogue_main.coverage" NAME="rogue_main Coverage Results" MODIFIED="1509013684896" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
@@ -39,8 +37,8 @@
       <file leaf-file-name="setup.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/setup.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="175">
-              <caret line="187" column="28" lean-forward="true" selection-start-line="187" selection-start-column="28" selection-end-line="187" selection-end-column="28" />
+            <state relative-caret-position="136">
+              <caret line="218" column="0" lean-forward="true" selection-start-line="218" selection-start-column="0" selection-end-line="218" selection-end-column="0" />
               <folding>
                 <element signature="e#0#27#0" expanded="true" />
               </folding>
@@ -51,8 +49,8 @@
       <file leaf-file-name="gameloop.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/gameloop.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="170">
-              <caret line="10" column="0" lean-forward="true" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
+            <state relative-caret-position="221">
+              <caret line="13" column="10" lean-forward="true" selection-start-line="13" selection-start-column="10" selection-end-line="13" selection-end-column="10" />
               <folding>
                 <element signature="e#0#27#0" expanded="true" />
               </folding>
@@ -163,7 +161,7 @@
     <property name="nodejs_interpreter_path" value="C:/Program Files/nodejs/node" />
     <property name="js.eslint.eslintPackage" value="" />
     <property name="js-jscs-nodeInterpreter" value="C:\Program Files\nodejs\node.exe" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
     <property name="last_opened_file_path" value="C:/Python27/python.exe" />
   </component>
   <component name="RunDashboard">
@@ -504,7 +502,21 @@
       <option name="project" value="LOCAL" />
       <updated>1509934198019</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="FOV working">
+      <created>1509935941199</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1509935941199</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Fog of war implemented">
+      <created>1509936357383</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1509936357383</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TodoView">
@@ -554,7 +566,9 @@
     <MESSAGE value="Rooms and tunnels" />
     <MESSAGE value="Dungeon generation" />
     <MESSAGE value="Test commit for branch" />
-    <option name="LAST_COMMIT_MESSAGE" value="Test commit for branch" />
+    <MESSAGE value="FOV working" />
+    <MESSAGE value="Fog of war implemented" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fog of war implemented" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -740,8 +754,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/gameloop.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="170">
-          <caret line="10" column="0" lean-forward="true" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
+        <state relative-caret-position="221">
+          <caret line="13" column="10" lean-forward="true" selection-start-line="13" selection-start-column="10" selection-end-line="13" selection-end-column="10" />
           <folding>
             <element signature="e#0#27#0" expanded="true" />
           </folding>
@@ -750,8 +764,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/setup.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="175">
-          <caret line="187" column="28" lean-forward="true" selection-start-line="187" selection-start-column="28" selection-end-line="187" selection-end-column="28" />
+        <state relative-caret-position="136">
+          <caret line="218" column="0" lean-forward="true" selection-start-line="218" selection-start-column="0" selection-end-line="218" selection-end-column="0" />
           <folding>
             <element signature="e#0#27#0" expanded="true" />
           </folding>
