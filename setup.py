@@ -6,14 +6,16 @@ import constants
 ########################################################################################################################
 
 class Object:
-    def __init__(self, x, y, char, color):
+    def __init__(self, x, y, char, name, color, blocks=False):
+        self.name = name
+        self.blocks = blocks
         self.x = x
         self.y = y
         self.char = char
         self.color = color
 
     def move(self, dx, dy):
-        if not map[self.x + dx][self.y + dy].blocked:
+        if not is_blocked(self.x + dx, self.y + dy):
             self.x += dx
             self.y += dy
 
@@ -68,6 +70,18 @@ def handle_keys():
 ########################################################################################################################
 # FUNCTIONS ############################################################################################################
 ########################################################################################################################
+
+def is_blocked(x, y):
+    # first test the map tile
+    if map[x][y].blocked:
+        return True
+
+    # now check for any blocking objects
+    for object in objects:
+        if object.blocks and object.x == x and object.y == y:
+            return True
+
+    return False
 
 class Rect:
     def __init__(self, x, y, w, h):
@@ -208,15 +222,12 @@ def render_all():
 ########################################################################################################################
 
 #Create the player using the Object class
-player = Object(constants.SCREEN_WIDTH / 2, constants.SCREEN_HEIGHT / 2, '@', libtcod.white)
+player = Object(0, 0, '@', 'player', libtcod.white, blocks=True)
 player.x = 25
 player.y = 23
 
-#Create a test npc using the Object class
-npc = Object(constants.SCREEN_WIDTH / 2 - 5, constants.SCREEN_HEIGHT / 2, '@', libtcod.yellow)
-
 #Initialize an array containing hitherto created objects
-objects = [npc, player]
+objects = [player]
 
 make_map()
 
