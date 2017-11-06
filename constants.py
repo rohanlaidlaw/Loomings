@@ -15,6 +15,8 @@ FOV_ALGO = 0
 FOV_LIGHT_WALLS = True
 TORCH_RADIUS = 10
 
+MAX_ROOM_MONSTERS = 3
+
 #Sets the colour of the tiles out of the player's line of sight
 color_dark_wall = libtcod.Color(0, 0, 100)
 color_light_wall = libtcod.Color(130, 110, 50)
