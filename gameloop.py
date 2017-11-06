@@ -14,6 +14,6 @@ while not libtcod.console_is_window_closed():
         object.clear()
 
 #If the exit key is detected, the loop is broken from, thereby ending the game
-    exit = handle_keys()
-    if exit:
+    player_action = handle_keys()
+    if player_action == 'exit':
         break
