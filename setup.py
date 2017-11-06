@@ -50,6 +50,49 @@ class Object:
     def clear(self):
         libtcod.console_put_char(const.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
 
+class Object:
+    def __init__(self, x, y, char, name, color, blocks=False, ai=None):
+        self.name = name
+        self.blocks = blocks
+        self.x = x
+        self.y = y
+        self.char = char
+        self.color = color
+        self.ai = ai
+        if self.ai:  #let the AI component know who owns it
+            self.ai.owner = self
+
+    def move(self, dx, dy):
+        if not is_blocked(self.x + dx, self.y + dy):
+            self.x += dx
+            self.y += dy
+
+    def move_towards(self, target_x, target_y):
+        # vector from this object to the target, and distance
+        dx = target_x - self.x
+        dy = target_y - self.y
+        distance = math.sqrt(dx ** 2 + dy ** 2)
+
+        # normalize it to length 1 (preserving direction), then round it and
+        # convert to integer so the movement is restricted to the map grid
+        dx = int(round(dx / distance))
+        dy = int(round(dy / distance))
+        self.move(dx, dy)
+
+    def distance_to(self, other):
+        # return the distance to another object
+        dx = other.x - self.x
+        dy = other.y - self.y
+        return math.sqrt(dx ** 2 + dy ** 2)
+
+    def draw(self):
+        if libtcod.map_is_in_fov(fov_map, self.x, self.y):
+            libtcod.console_set_default_foreground(const.con, self.color)
+            libtcod.console_put_char(const.con, self.x, self.y, self.char, libtcod.BKGND_NONE)
+
+    def clear(self):
+        libtcod.console_put_char(const.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
+
 
 class BasicNPC:
     # AI for a basic monster.
@@ -90,7 +133,6 @@ def handle_keys():
                 look_cursor.x = player.x
                 look_cursor.y = player.y
 
-
     elif key.vk == libtcod.KEY_ESCAPE:
         if looking == False:
             return 'exit'
@@ -115,6 +157,9 @@ def handle_keys():
                 player_move_or_attack(1, 0)
 
             else:
+                if key.c == ord('i'):
+                    # show the inventory
+                    inventory_menu('Press the key next to an item to use it, or any other to cancel.\n')
                 return 'didnt-take-turn'
 
     # Arrow Keys (Looking) ---------------------------------------------------------------------------------------------
@@ -221,6 +266,57 @@ def player_move_or_attack(dx, dy):
         player.move(dx, dy)
         fov_recompute = True
 
+def menu(header, options, width):
+    if len(options) > 26: raise ValueError('Cannot have a menu with more than 26 options.')
+
+    #calculate total height for the header (after auto-wrap) and one line per option
+    header_height = libtcod.console_get_height_rect(const.con, 0, 0, width, const.SCREEN_HEIGHT, header)
+    height = len(options) + header_height
+
+    # create an off-screen console that represents the menu's window
+    window = libtcod.console_new(width, height)
+
+    # print the header, with auto-wrap
+    libtcod.console_set_default_foreground(window, libtcod.white)
+    libtcod.console_print_rect_ex(window, 0, 0, width, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
+
+    #print all the options
+    y = header_height
+    letter_index = ord('a')
+    for option_text in options:
+        text = '(' + chr(letter_index) + ') ' + option_text
+        libtcod.console_print_ex(window, 0, y, libtcod.BKGND_NONE, libtcod.LEFT, text)
+        y += 1
+        letter_index += 1
+
+    #blit the contents of "window" to the root console
+    x = const.SCREEN_WIDTH/2 - width/2
+    y = const.SCREEN_HEIGHT/2 - height/2
+    libtcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
+
+    # present the root console to the player and wait for a key-press
+    libtcod.console_flush()
+    key = libtcod.console_wait_for_keypress(True)
+
+    # convert the ASCII code to an index; if it corresponds to an option, return it
+    index = key.c - ord('a')
+    if index >= 0 and index < len(options): return index
+    return None
+
+
+def inventory_menu(header):
+    # show a menu with each item of the inventory as an option
+    if len(inventory) == 0:
+        options = ['Inventory is empty.']
+    else:
+        options = [item.name for item in inventory]
+
+    index = menu(header, options, const.INVENTORY_WIDTH)
+
+    # if an item was chosen, return it
+    if index is None or len(inventory) == 0: return None
+    return inventory[index].item
+
 class Rect:
     def __init__(self, x, y, w, h):
         self.x1 = x
@@ -284,14 +380,16 @@ def message(new_msg, color=libtcod.white):
 
     for line in new_msg_lines:
         # if the buffer is full, remove the first line to make room for the new one
-        if len(const.game_msgs) == const.MSG_HEIGHT:
-            del const.game_msgs[0]
+        if len(game_msgs) == const.MSG_HEIGHT:
+            del game_msgs[0]
 
         # add the new line as a tuple, with the text and the color
-        const.game_msgs.append((line, color))
+        game_msgs.append((line, color))
 
 def make_map():
-    global map
+    global map, objects
+
+    objects = [player, look_cursor]
 
     # fill map with "blocked" tiles
     map = [[Tile(True)
@@ -384,6 +482,7 @@ def render_all():
 
     for object in objects:
         object.draw()
+    look_cursor.draw()
 
     libtcod.console_blit(const.con, 0, 0, const.SCREEN_WIDTH, const.SCREEN_HEIGHT, 0, 0, 0)
 
@@ -393,7 +492,7 @@ def render_all():
 
     #print the game messages, one line at a time
     y = 1
-    for (line, color) in const.game_msgs:
+    for (line, color) in game_msgs:
         libtcod.console_set_default_foreground(const.panel, color)
         libtcod.console_print_ex(const.panel, const.MSG_X, y, libtcod.BKGND_NONE, libtcod.LEFT, line)
         y += 1
@@ -410,31 +509,62 @@ def render_all():
     # blit the contents of "panel" to the root console
     libtcod.console_blit(const.panel, 0, 0, const.SCREEN_WIDTH, const.PANEL_HEIGHT, 0, 0, const.PANEL_Y)
 
-########################################################################################################################
-# GENERAL SET UP #######################################################################################################
-########################################################################################################################
 
-#Create the player using the Object class
-player = Object(0, 0, '@', 'you', libtcod.white, blocks=True)
-look_cursor = Object(-1, -1, 'X', 'look', libtcod.yellow, blocks=False)
-player.x = 25
-player.y = 23
+def initialize_fov():
+    global fov_recompute, fov_map
+    fov_recompute = True
 
-#Initialize an array containing hitherto created objects
-objects = [player, look_cursor]
+    # create the FOV map, according to the generated map
+    fov_map = libtcod.map_new(const.MAP_WIDTH, const.MAP_HEIGHT)
+    for y in range(const.MAP_HEIGHT):
+        for x in range(const.MAP_WIDTH):
+            libtcod.map_set_properties(fov_map, x, y, not map[x][y].block_sight, not map[x][y].blocked)
 
-make_map()
+def new_game():
+    global player, look_cursor, looking, inventory, game_msgs, game_state
 
-fov_map = libtcod.map_new(const.MAP_WIDTH, const.MAP_HEIGHT)
-for y in range(const.MAP_HEIGHT):
-    for x in range(const.MAP_WIDTH):
-        libtcod.map_set_properties(fov_map, x, y, not map[x][y].block_sight, not map[x][y].blocked)
+    # create object representing the player
+    player = Object(25, 23, '@', 'player', libtcod.white, blocks=True)
+    look_cursor = Object(-1, -1, 'X', 'look', libtcod.yellow, blocks=False)
 
-fov_recompute = True
+    # generate map (at this point it's not drawn to the screen)
+    make_map()
+    initialize_fov()
 
-game_state = 'playing'
-looking = False
-player_action = None
+    game_state = 'playing'
+    looking = False
+    inventory = []
 
-#a warm welcoming message!
-message('Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.', libtcod.red)
+    # create the list of game messages and their colors, starts empty
+    game_msgs = []
+
+    # a warm welcoming message!
+    message('Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.', libtcod.red)
+
+def play_game():
+
+    player_action = None
+
+    while not libtcod.console_is_window_closed():
+        # render the screen
+        render_all()
+
+        libtcod.console_flush()
+
+        # erase all objects at their old locations, before they move
+        for object in objects:
+            object.clear()
+
+        # handle keys and exit game if needed
+        player_action = handle_keys()
+        if player_action == 'exit':
+            break
+
+        # let monsters take their turn
+        if game_state == 'playing' and player_action != 'didnt-take-turn':
+            for object in objects:
+                if object.ai:
+                    object.ai.take_turn()
+
+new_game()
+play_game()

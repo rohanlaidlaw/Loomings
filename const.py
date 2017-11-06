@@ -55,7 +55,11 @@ MSG_X = BAR_WIDTH + 2
 MSG_WIDTH = SCREEN_WIDTH - BAR_WIDTH - 2
 MSG_HEIGHT = PANEL_HEIGHT - 1
 
-game_msgs = []
+########################################################################################################################
+# INVENTORY ############################################################################################################
+########################################################################################################################
+
+INVENTORY_WIDTH = 50
 
 ########################################################################################################################
 # APPLY & OTHER ########################################################################################################
@@ -68,5 +72,6 @@ libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'Loomings', False)
 
 #A buffer console whereupon the sprites will be written is drawn over the root console
 con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
+
 libtcod.sys_set_fps(LIMIT_FPS)
 
