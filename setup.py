@@ -1,5 +1,5 @@
 import libtcodpy as libtcod
-import screen
+import constants
 
 ########################################################################################################################
 # CLASSES ##############################################################################################################
@@ -18,11 +18,12 @@ class Object:
             self.y += dy
 
     def draw(self):
-        libtcod.console_set_default_foreground(screen.con, self.color)
-        libtcod.console_put_char(screen.con, self.x, self.y, self.char, libtcod.BKGND_NONE)
+        if libtcod.map_is_in_fov(fov_map, self.x, self.y):
+            libtcod.console_set_default_foreground(constants.con, self.color)
+            libtcod.console_put_char(constants.con, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
     def clear(self):
-        libtcod.console_put_char(screen.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
+        libtcod.console_put_char(constants.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
 
 class Tile:
     def __init__(self, blocked, block_sight=None):
@@ -36,6 +37,8 @@ class Tile:
 ########################################################################################################################
 
 def handle_keys():
+    global fov_recompute
+
     key = libtcod.console_wait_for_keypress(True)
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
@@ -47,15 +50,19 @@ def handle_keys():
     # Arrow Keys -------------------------------------------------------------------------------------------------------
     if libtcod.console_is_key_pressed(libtcod.KEY_UP):
         player.move(0, -1)
+        fov_recompute = True
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
         player.move(0, 1)
+        fov_recompute = True
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
         player.move(-1, 0)
+        fov_recompute = True
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
         player.move(1, 0)
+        fov_recompute = True
 
 ########################################################################################################################
 # FUNCTIONS ############################################################################################################
@@ -104,19 +111,19 @@ def make_map():
 
     # fill map with "blocked" tiles
     map = [[Tile(True)
-        for y in range(screen.MAP_HEIGHT)]
-           for x in range(screen.MAP_WIDTH)]
+            for y in range(constants.MAP_HEIGHT)]
+           for x in range(constants.MAP_WIDTH)]
 
     rooms = []
     num_rooms = 0
 
-    for r in range(screen.MAX_ROOMS):
+    for r in range(constants.MAX_ROOMS):
         # random width and height
-        w = libtcod.random_get_int(0, screen.ROOM_MIN_SIZE, screen.ROOM_MAX_SIZE)
-        h = libtcod.random_get_int(0, screen.ROOM_MIN_SIZE, screen.ROOM_MAX_SIZE)
+        w = libtcod.random_get_int(0, constants.ROOM_MIN_SIZE, constants.ROOM_MAX_SIZE)
+        h = libtcod.random_get_int(0, constants.ROOM_MIN_SIZE, constants.ROOM_MAX_SIZE)
         # random position without going out of the boundaries of the map
-        x = libtcod.random_get_int(0, 0, screen.MAP_WIDTH - w - 1)
-        y = libtcod.random_get_int(0, 0, screen.MAP_HEIGHT - h - 1)
+        x = libtcod.random_get_int(0, 0, constants.MAP_WIDTH - w - 1)
+        y = libtcod.random_get_int(0, 0, constants.MAP_HEIGHT - h - 1)
 
         # "Rect" class makes rectangles easier to work with
         new_room = Rect(x, y, w, h)
@@ -162,37 +169,57 @@ def make_map():
             rooms.append(new_room)
             num_rooms += 1
 
-###
 def render_all():
-    global color_light_wall
-    global color_light_ground
+    global fov_map, color_dark_wall, color_light_wall
+    global color_dark_ground, color_light_ground
+    global fov_recompute
 
-    for y in range(screen.MAP_HEIGHT):
-        for x in range(screen.MAP_WIDTH):
-            wall = map[x][y].block_sight
-            if wall:
-                libtcod.console_set_char_background(screen.con, x, y, screen.color_dark_wall, libtcod.BKGND_SET)
-            else:
-                libtcod.console_set_char_background(screen.con, x, y, screen.color_dark_ground, libtcod.BKGND_SET)
+    if fov_recompute:
+        fov_recompute = False
+        libtcod.map_compute_fov(fov_map, player.x, player.y, constants.TORCH_RADIUS, constants.FOV_LIGHT_WALLS, constants.FOV_ALGO)
+
+        for y in range(constants.MAP_HEIGHT):
+            for x in range(constants.MAP_WIDTH):
+                visible = libtcod.map_is_in_fov(fov_map, x, y)
+                wall = map[x][y].block_sight
+                if not visible:
+                    #it's out of the player's FOV
+                    if wall:
+                        libtcod.console_set_char_background(constants.con, x, y, constants.color_dark_wall, libtcod.BKGND_SET)
+                    else:
+                        libtcod.console_set_char_background(constants.con, x, y, constants.color_dark_ground, libtcod.BKGND_SET)
+                else:
+                    #it's visible
+                    if wall:
+                        libtcod.console_set_char_background(constants.con, x, y, constants.color_light_wall, libtcod.BKGND_SET )
+                    else:
+                        libtcod.console_set_char_background(constants.con, x, y, constants.color_light_ground, libtcod.BKGND_SET )
 
     for object in objects:
         object.draw()
 
-    libtcod.console_blit(screen.con, 0, 0, screen.SCREEN_WIDTH, screen.SCREEN_HEIGHT, 0, 0, 0)
+    libtcod.console_blit(constants.con, 0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, 0, 0, 0)
 
 ########################################################################################################################
 # GENERAL SET UP #######################################################################################################
 ########################################################################################################################
 
 #Create the player using the Object class
-player = Object(screen.SCREEN_WIDTH/2, screen.SCREEN_HEIGHT/2, '@', libtcod.white)
+player = Object(constants.SCREEN_WIDTH / 2, constants.SCREEN_HEIGHT / 2, '@', libtcod.white)
 player.x = 25
 player.y = 23
 
 #Create a test npc using the Object class
-npc = Object(screen.SCREEN_WIDTH/2 - 5, screen.SCREEN_HEIGHT/2, '@', libtcod.yellow)
+npc = Object(constants.SCREEN_WIDTH / 2 - 5, constants.SCREEN_HEIGHT / 2, '@', libtcod.yellow)
 
 #Initialize an array containing hitherto created objects
 objects = [npc, player]
 
 make_map()
+
+fov_map = libtcod.map_new(constants.MAP_WIDTH, constants.MAP_HEIGHT)
+for y in range(constants.MAP_HEIGHT):
+    for x in range(constants.MAP_WIDTH):
+        libtcod.map_set_properties(fov_map, x, y, not map[x][y].block_sight, not map[x][y].blocked)
+
+fov_recompute = True
