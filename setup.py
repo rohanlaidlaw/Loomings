@@ -1,6 +1,7 @@
 import libtcodpy as libtcod
-import constants
+import const
 import math
+import textwrap
 
 ########################################################################################################################
 # CLASSES ##############################################################################################################
@@ -43,16 +44,23 @@ class Object:
 
     def draw(self):
         if libtcod.map_is_in_fov(fov_map, self.x, self.y):
-            libtcod.console_set_default_foreground(constants.con, self.color)
-            libtcod.console_put_char(constants.con, self.x, self.y, self.char, libtcod.BKGND_NONE)
+            libtcod.console_set_default_foreground(const.con, self.color)
+            libtcod.console_put_char(const.con, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
     def clear(self):
-        libtcod.console_put_char(constants.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
+        libtcod.console_put_char(const.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
+
 
 class BasicNPC:
-    #AI for a basic monster.
+    # AI for a basic monster.
     def take_turn(self):
-        print 'The ' + self.owner.name + ' growls!'
+        # a basic monster takes its turn. If you can see it, it can see you
+        monster = self.owner
+        if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+
+            # move towards player if far away
+            if monster.distance_to(player) >= 2:
+                monster.move_towards(player.x, player.y)
 
 class Tile:
     def __init__(self, blocked, block_sight=None):
@@ -68,30 +76,73 @@ class Tile:
 
 def handle_keys():
     global fov_recompute
+    global looking
 
     key = libtcod.console_wait_for_keypress(True)
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
 
+    if looking == False:
+        if key.vk == libtcod.KEY_CHAR:
+            if key.c == ord('l'):
+                looking = True
+                look_cursor.x = player.x
+                look_cursor.y = player.y
+
+
     elif key.vk == libtcod.KEY_ESCAPE:
-        return 'exit'
+        if looking == False:
+            return 'exit'
+        elif looking:
+            look_cursor.x = -1
+            look_cursor.y = -1
+            looking = False
 
-    # Arrow Keys -------------------------------------------------------------------------------------------------------
+    # Arrow Keys (Moving) ----------------------------------------------------------------------------------------------
     if game_state == 'playing':
-        if libtcod.console_is_key_pressed(libtcod.KEY_UP):
-            player_move_or_attack(0, -1)
+        if looking == False:
+            if libtcod.console_is_key_pressed(libtcod.KEY_UP):
+                player_move_or_attack(0, -1)
 
-        elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
-            player_move_or_attack(0, 1)
+            elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
+                player_move_or_attack(0, 1)
 
-        elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
-            player_move_or_attack(-1, 0)
+            elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
+                player_move_or_attack(-1, 0)
 
-        elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
-            player_move_or_attack(1, 0)
-        else:
+            elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
+                player_move_or_attack(1, 0)
+
+            else:
+                return 'didnt-take-turn'
+
+    # Arrow Keys (Looking) ---------------------------------------------------------------------------------------------
+    if game_state == 'playing':
+        if looking == True:
+            if libtcod.console_is_key_pressed(libtcod.KEY_UP):
+                if libtcod.map_is_in_fov(fov_map, look_cursor.x, (look_cursor.y - 1)):
+                    look_cursor.y -= 1
+
+
+            elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
+                if libtcod.map_is_in_fov(fov_map, look_cursor.x, (look_cursor.y + 1)):
+                    look_cursor.y += 1
+
+
+            elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
+                if libtcod.map_is_in_fov(fov_map, (look_cursor.x - 1), look_cursor.y):
+                    look_cursor.x -= 1
+
+
+            elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
+                if libtcod.map_is_in_fov(fov_map, (look_cursor.x + 1), look_cursor.y):
+                    look_cursor.x += 1
+
+
             return 'didnt-take-turn'
+
+
 
 ########################################################################################################################
 # FUNCTIONS ############################################################################################################
@@ -99,7 +150,7 @@ def handle_keys():
 
 def place_objects(room):
     # choose random number of monsters
-    num_monsters = libtcod.random_get_int(0, 0, constants.MAX_ROOM_MONSTERS)
+    num_monsters = libtcod.random_get_int(0, 0, const.MAX_ROOM_MONSTERS)
 
     for i in range(num_monsters):
         # choose random spot for this monster
@@ -110,14 +161,32 @@ def place_objects(room):
         if not is_blocked(x, y):
             if libtcod.random_get_int(0, 0, 100) < 80:  # 80% chance of getting an orc
                 # create an orc
+                ai_component = BasicNPC()
+
                 monster = Object(x, y, 'o', 'orc', libtcod.desaturated_green,
-                                 blocks=True)
+                                 blocks=True, ai=ai_component)
             else:
                 # create a troll
+                ai_component = BasicNPC()
+
                 monster = Object(x, y, 'T', 'troll', libtcod.darker_green,
-                                 blocks=True)
+                                 blocks=True, ai=ai_component)
 
             objects.append(monster)
+
+
+def looking_oracle():
+
+    # return a string with the names of all objects under the mouse
+    (x, y) = (look_cursor.x, look_cursor.y)
+
+    #create a list with the names of all objects at the looking coordinates and in FOV
+    names = [obj.name for obj in objects
+        if obj.name != 'look'
+            if obj.x == x and obj.y == y and libtcod.map_is_in_fov(fov_map, obj.x, obj.y)]
+
+    names = ', '.join(names)  #join the names, separated by commas
+    return names.capitalize()
 
 def is_blocked(x, y):
     # first test the map tile
@@ -147,7 +216,7 @@ def player_move_or_attack(dx, dy):
 
     # attack if target found, move otherwise
     if target is not None:
-        print 'The ' + target.name + ' laughs at your puny efforts to attack him!'
+        message('The ' + target.name + ' laughs at your puny efforts to attack him!', libtcod.red)
     else:
         player.move(dx, dy)
         fov_recompute = True
@@ -190,24 +259,55 @@ def create_v_tunnel(y1, y2, x):
         map[x][y].blocked = False
         map[x][y].block_sight = False
 
+
+def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
+    # render a bar (HP, experience, etc). first calculate the width of the bar
+    bar_width = int(float(value) / maximum * total_width)
+
+    # render the background first
+    libtcod.console_set_default_background(const.panel, back_color)
+    libtcod.console_rect(const.panel, x, y, total_width, 1, False, libtcod.BKGND_SCREEN)
+
+    # now render the bar on top
+    libtcod.console_set_default_background(const.panel, bar_color)
+    if bar_width > 0:
+        libtcod.console_rect(const.panel, x, y, bar_width, 1, False, libtcod.BKGND_SCREEN)
+
+    libtcod.console_set_default_foreground(const.panel, libtcod.white)
+    libtcod.console_print_ex(const.panel, x + total_width / 2, y, libtcod.BKGND_NONE, libtcod.CENTER,
+                             name + ': ' + str(value) + '/' + str(maximum))
+
+
+def message(new_msg, color=libtcod.white):
+    # split the message if necessary, among multiple lines
+    new_msg_lines = textwrap.wrap(new_msg, const.MSG_WIDTH)
+
+    for line in new_msg_lines:
+        # if the buffer is full, remove the first line to make room for the new one
+        if len(const.game_msgs) == const.MSG_HEIGHT:
+            del const.game_msgs[0]
+
+        # add the new line as a tuple, with the text and the color
+        const.game_msgs.append((line, color))
+
 def make_map():
     global map
 
     # fill map with "blocked" tiles
     map = [[Tile(True)
-            for y in range(constants.MAP_HEIGHT)]
-           for x in range(constants.MAP_WIDTH)]
+            for y in range(const.MAP_HEIGHT)]
+           for x in range(const.MAP_WIDTH)]
 
     rooms = []
     num_rooms = 0
 
-    for r in range(constants.MAX_ROOMS):
+    for r in range(const.MAX_ROOMS):
         # random width and height
-        w = libtcod.random_get_int(0, constants.ROOM_MIN_SIZE, constants.ROOM_MAX_SIZE)
-        h = libtcod.random_get_int(0, constants.ROOM_MIN_SIZE, constants.ROOM_MAX_SIZE)
+        w = libtcod.random_get_int(0, const.ROOM_MIN_SIZE, const.ROOM_MAX_SIZE)
+        h = libtcod.random_get_int(0, const.ROOM_MIN_SIZE, const.ROOM_MAX_SIZE)
         # random position without going out of the boundaries of the map
-        x = libtcod.random_get_int(0, 0, constants.MAP_WIDTH - w - 1)
-        y = libtcod.random_get_int(0, 0, constants.MAP_HEIGHT - h - 1)
+        x = libtcod.random_get_int(0, 0, const.MAP_WIDTH - w - 1)
+        y = libtcod.random_get_int(0, 0, const.MAP_HEIGHT - h - 1)
 
         # "Rect" class makes rectangles easier to work with
         new_room = Rect(x, y, w, h)
@@ -261,52 +361,80 @@ def render_all():
 
     if fov_recompute:
         fov_recompute = False
-        libtcod.map_compute_fov(fov_map, player.x, player.y, constants.TORCH_RADIUS, constants.FOV_LIGHT_WALLS, constants.FOV_ALGO)
+        libtcod.map_compute_fov(fov_map, player.x, player.y, const.TORCH_RADIUS, const.FOV_LIGHT_WALLS, const.FOV_ALGO)
 
-        for y in range(constants.MAP_HEIGHT):
-            for x in range(constants.MAP_WIDTH):
+        for y in range(const.MAP_HEIGHT):
+            for x in range(const.MAP_WIDTH):
                 visible = libtcod.map_is_in_fov(fov_map, x, y)
                 wall = map[x][y].block_sight
                 if not visible:
                     if map[x][y].explored:
                         #it's out of the player's FOV
                         if wall:
-                            libtcod.console_set_char_background(constants.con, x, y, constants.color_dark_wall, libtcod.BKGND_SET)
+                            libtcod.console_set_char_background(const.con, x, y, const.color_dark_wall, libtcod.BKGND_SET)
                         else:
-                            libtcod.console_set_char_background(constants.con, x, y, constants.color_dark_ground, libtcod.BKGND_SET)
+                            libtcod.console_set_char_background(const.con, x, y, const.color_dark_ground, libtcod.BKGND_SET)
                 else:
                     #it's visible
                     if wall:
-                        libtcod.console_set_char_background(constants.con, x, y, constants.color_light_wall, libtcod.BKGND_SET )
+                        libtcod.console_set_char_background(const.con, x, y, const.color_light_wall, libtcod.BKGND_SET)
                     else:
-                        libtcod.console_set_char_background(constants.con, x, y, constants.color_light_ground, libtcod.BKGND_SET )
+                        libtcod.console_set_char_background(const.con, x, y, const.color_light_ground, libtcod.BKGND_SET)
                     map[x][y].explored = True
 
     for object in objects:
         object.draw()
 
-    libtcod.console_blit(constants.con, 0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, 0, 0, 0)
+    libtcod.console_blit(const.con, 0, 0, const.SCREEN_WIDTH, const.SCREEN_HEIGHT, 0, 0, 0)
+
+    # prepare to render the GUI panel
+    libtcod.console_set_default_background(const.panel, libtcod.black)
+    libtcod.console_clear(const.panel)
+
+    #print the game messages, one line at a time
+    y = 1
+    for (line, color) in const.game_msgs:
+        libtcod.console_set_default_foreground(const.panel, color)
+        libtcod.console_print_ex(const.panel, const.MSG_X, y, libtcod.BKGND_NONE, libtcod.LEFT, line)
+        y += 1
+
+    if looking == True:
+        #display names of objects under the mouse
+        libtcod.console_set_default_foreground(const.panel, libtcod.light_gray)
+        libtcod.console_print_ex(const.panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, looking_oracle())
+
+    # show the player's stats
+    render_bar(1, 1, const.BAR_WIDTH, 'HP', 28, 50,
+               libtcod.light_red, libtcod.darker_red)
+
+    # blit the contents of "panel" to the root console
+    libtcod.console_blit(const.panel, 0, 0, const.SCREEN_WIDTH, const.PANEL_HEIGHT, 0, 0, const.PANEL_Y)
 
 ########################################################################################################################
 # GENERAL SET UP #######################################################################################################
 ########################################################################################################################
 
 #Create the player using the Object class
-player = Object(0, 0, '@', 'player', libtcod.white, blocks=True)
+player = Object(0, 0, '@', 'you', libtcod.white, blocks=True)
+look_cursor = Object(-1, -1, 'X', 'look', libtcod.yellow, blocks=False)
 player.x = 25
 player.y = 23
 
 #Initialize an array containing hitherto created objects
-objects = [player]
+objects = [player, look_cursor]
 
 make_map()
 
-fov_map = libtcod.map_new(constants.MAP_WIDTH, constants.MAP_HEIGHT)
-for y in range(constants.MAP_HEIGHT):
-    for x in range(constants.MAP_WIDTH):
+fov_map = libtcod.map_new(const.MAP_WIDTH, const.MAP_HEIGHT)
+for y in range(const.MAP_HEIGHT):
+    for x in range(const.MAP_WIDTH):
         libtcod.map_set_properties(fov_map, x, y, not map[x][y].block_sight, not map[x][y].blocked)
 
 fov_recompute = True
 
 game_state = 'playing'
+looking = False
 player_action = None
+
+#a warm welcoming message!
+message('Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.', libtcod.red)
