@@ -162,7 +162,7 @@ def make_map():
             rooms.append(new_room)
             num_rooms += 1
 
-
+###
 def render_all():
     global color_light_wall
     global color_light_ground
