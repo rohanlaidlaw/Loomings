@@ -1,6 +1,7 @@
 import libtcodpy as libtcod
 import const
 import math
+import textwrap
 
 ########################################################################################################################
 # CLASSES ##############################################################################################################
@@ -75,30 +76,73 @@ class Tile:
 
 def handle_keys():
     global fov_recompute
+    global looking
 
     key = libtcod.console_wait_for_keypress(True)
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
 
+    if looking == False:
+        if key.vk == libtcod.KEY_CHAR:
+            if key.c == ord('l'):
+                looking = True
+                look_cursor.x = player.x
+                look_cursor.y = player.y
+
+
     elif key.vk == libtcod.KEY_ESCAPE:
-        return 'exit'
+        if looking == False:
+            return 'exit'
+        elif looking:
+            look_cursor.x = -1
+            look_cursor.y = -1
+            looking = False
 
-    # Arrow Keys -------------------------------------------------------------------------------------------------------
+    # Arrow Keys (Moving) ----------------------------------------------------------------------------------------------
     if game_state == 'playing':
-        if libtcod.console_is_key_pressed(libtcod.KEY_UP):
-            player_move_or_attack(0, -1)
+        if looking == False:
+            if libtcod.console_is_key_pressed(libtcod.KEY_UP):
+                player_move_or_attack(0, -1)
 
-        elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
-            player_move_or_attack(0, 1)
+            elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
+                player_move_or_attack(0, 1)
 
-        elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
-            player_move_or_attack(-1, 0)
+            elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
+                player_move_or_attack(-1, 0)
 
-        elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
-            player_move_or_attack(1, 0)
-        else:
+            elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
+                player_move_or_attack(1, 0)
+
+            else:
+                return 'didnt-take-turn'
+
+    # Arrow Keys (Looking) ---------------------------------------------------------------------------------------------
+    if game_state == 'playing':
+        if looking == True:
+            if libtcod.console_is_key_pressed(libtcod.KEY_UP):
+                if libtcod.map_is_in_fov(fov_map, look_cursor.x, (look_cursor.y - 1)):
+                    look_cursor.y -= 1
+
+
+            elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
+                if libtcod.map_is_in_fov(fov_map, look_cursor.x, (look_cursor.y + 1)):
+                    look_cursor.y += 1
+
+
+            elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
+                if libtcod.map_is_in_fov(fov_map, (look_cursor.x - 1), look_cursor.y):
+                    look_cursor.x -= 1
+
+
+            elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
+                if libtcod.map_is_in_fov(fov_map, (look_cursor.x + 1), look_cursor.y):
+                    look_cursor.x += 1
+
+
             return 'didnt-take-turn'
+
+
 
 ########################################################################################################################
 # FUNCTIONS ############################################################################################################
@@ -130,6 +174,20 @@ def place_objects(room):
 
             objects.append(monster)
 
+
+def looking_oracle():
+
+    # return a string with the names of all objects under the mouse
+    (x, y) = (look_cursor.x, look_cursor.y)
+
+    #create a list with the names of all objects at the looking coordinates and in FOV
+    names = [obj.name for obj in objects
+        if obj.name != 'look'
+            if obj.x == x and obj.y == y and libtcod.map_is_in_fov(fov_map, obj.x, obj.y)]
+
+    names = ', '.join(names)  #join the names, separated by commas
+    return names.capitalize()
+
 def is_blocked(x, y):
     # first test the map tile
     if map[x][y].blocked:
@@ -158,7 +216,7 @@ def player_move_or_attack(dx, dy):
 
     # attack if target found, move otherwise
     if target is not None:
-        print 'The ' + target.name + ' laughs at your puny efforts to attack him!'
+        message('The ' + target.name + ' laughs at your puny efforts to attack him!', libtcod.red)
     else:
         player.move(dx, dy)
         fov_recompute = True
@@ -218,6 +276,19 @@ def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
     libtcod.console_set_default_foreground(const.panel, libtcod.white)
     libtcod.console_print_ex(const.panel, x + total_width / 2, y, libtcod.BKGND_NONE, libtcod.CENTER,
                              name + ': ' + str(value) + '/' + str(maximum))
+
+
+def message(new_msg, color=libtcod.white):
+    # split the message if necessary, among multiple lines
+    new_msg_lines = textwrap.wrap(new_msg, const.MSG_WIDTH)
+
+    for line in new_msg_lines:
+        # if the buffer is full, remove the first line to make room for the new one
+        if len(const.game_msgs) == const.MSG_HEIGHT:
+            del const.game_msgs[0]
+
+        # add the new line as a tuple, with the text and the color
+        const.game_msgs.append((line, color))
 
 def make_map():
     global map
@@ -320,6 +391,18 @@ def render_all():
     libtcod.console_set_default_background(const.panel, libtcod.black)
     libtcod.console_clear(const.panel)
 
+    #print the game messages, one line at a time
+    y = 1
+    for (line, color) in const.game_msgs:
+        libtcod.console_set_default_foreground(const.panel, color)
+        libtcod.console_print_ex(const.panel, const.MSG_X, y, libtcod.BKGND_NONE, libtcod.LEFT, line)
+        y += 1
+
+    if looking == True:
+        #display names of objects under the mouse
+        libtcod.console_set_default_foreground(const.panel, libtcod.light_gray)
+        libtcod.console_print_ex(const.panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, looking_oracle())
+
     # show the player's stats
     render_bar(1, 1, const.BAR_WIDTH, 'HP', 28, 50,
                libtcod.light_red, libtcod.darker_red)
@@ -332,12 +415,13 @@ def render_all():
 ########################################################################################################################
 
 #Create the player using the Object class
-player = Object(0, 0, '@', 'player', libtcod.white, blocks=True)
+player = Object(0, 0, '@', 'you', libtcod.white, blocks=True)
+look_cursor = Object(-1, -1, 'X', 'look', libtcod.yellow, blocks=False)
 player.x = 25
 player.y = 23
 
 #Initialize an array containing hitherto created objects
-objects = [player]
+objects = [player, look_cursor]
 
 make_map()
 
@@ -349,4 +433,8 @@ for y in range(const.MAP_HEIGHT):
 fov_recompute = True
 
 game_state = 'playing'
+looking = False
 player_action = None
+
+#a warm welcoming message!
+message('Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.', libtcod.red)
