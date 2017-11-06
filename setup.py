@@ -1,5 +1,5 @@
 import libtcodpy as libtcod
-import constants
+import const
 import math
 
 ########################################################################################################################
@@ -43,16 +43,23 @@ class Object:
 
     def draw(self):
         if libtcod.map_is_in_fov(fov_map, self.x, self.y):
-            libtcod.console_set_default_foreground(constants.con, self.color)
-            libtcod.console_put_char(constants.con, self.x, self.y, self.char, libtcod.BKGND_NONE)
+            libtcod.console_set_default_foreground(const.con, self.color)
+            libtcod.console_put_char(const.con, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
     def clear(self):
-        libtcod.console_put_char(constants.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
+        libtcod.console_put_char(const.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
+
 
 class BasicNPC:
-    #AI for a basic monster.
+    # AI for a basic monster.
     def take_turn(self):
-        print 'The ' + self.owner.name + ' growls!'
+        # a basic monster takes its turn. If you can see it, it can see you
+        monster = self.owner
+        if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+
+            # move towards player if far away
+            if monster.distance_to(player) >= 2:
+                monster.move_towards(player.x, player.y)
 
 class Tile:
     def __init__(self, blocked, block_sight=None):
@@ -99,7 +106,7 @@ def handle_keys():
 
 def place_objects(room):
     # choose random number of monsters
-    num_monsters = libtcod.random_get_int(0, 0, constants.MAX_ROOM_MONSTERS)
+    num_monsters = libtcod.random_get_int(0, 0, const.MAX_ROOM_MONSTERS)
 
     for i in range(num_monsters):
         # choose random spot for this monster
@@ -110,12 +117,16 @@ def place_objects(room):
         if not is_blocked(x, y):
             if libtcod.random_get_int(0, 0, 100) < 80:  # 80% chance of getting an orc
                 # create an orc
+                ai_component = BasicNPC()
+
                 monster = Object(x, y, 'o', 'orc', libtcod.desaturated_green,
-                                 blocks=True)
+                                 blocks=True, ai=ai_component)
             else:
                 # create a troll
+                ai_component = BasicNPC()
+
                 monster = Object(x, y, 'T', 'troll', libtcod.darker_green,
-                                 blocks=True)
+                                 blocks=True, ai=ai_component)
 
             objects.append(monster)
 
@@ -190,24 +201,42 @@ def create_v_tunnel(y1, y2, x):
         map[x][y].blocked = False
         map[x][y].block_sight = False
 
+
+def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
+    # render a bar (HP, experience, etc). first calculate the width of the bar
+    bar_width = int(float(value) / maximum * total_width)
+
+    # render the background first
+    libtcod.console_set_default_background(const.panel, back_color)
+    libtcod.console_rect(const.panel, x, y, total_width, 1, False, libtcod.BKGND_SCREEN)
+
+    # now render the bar on top
+    libtcod.console_set_default_background(const.panel, bar_color)
+    if bar_width > 0:
+        libtcod.console_rect(const.panel, x, y, bar_width, 1, False, libtcod.BKGND_SCREEN)
+
+    libtcod.console_set_default_foreground(const.panel, libtcod.white)
+    libtcod.console_print_ex(const.panel, x + total_width / 2, y, libtcod.BKGND_NONE, libtcod.CENTER,
+                             name + ': ' + str(value) + '/' + str(maximum))
+
 def make_map():
     global map
 
     # fill map with "blocked" tiles
     map = [[Tile(True)
-            for y in range(constants.MAP_HEIGHT)]
-           for x in range(constants.MAP_WIDTH)]
+            for y in range(const.MAP_HEIGHT)]
+           for x in range(const.MAP_WIDTH)]
 
     rooms = []
     num_rooms = 0
 
-    for r in range(constants.MAX_ROOMS):
+    for r in range(const.MAX_ROOMS):
         # random width and height
-        w = libtcod.random_get_int(0, constants.ROOM_MIN_SIZE, constants.ROOM_MAX_SIZE)
-        h = libtcod.random_get_int(0, constants.ROOM_MIN_SIZE, constants.ROOM_MAX_SIZE)
+        w = libtcod.random_get_int(0, const.ROOM_MIN_SIZE, const.ROOM_MAX_SIZE)
+        h = libtcod.random_get_int(0, const.ROOM_MIN_SIZE, const.ROOM_MAX_SIZE)
         # random position without going out of the boundaries of the map
-        x = libtcod.random_get_int(0, 0, constants.MAP_WIDTH - w - 1)
-        y = libtcod.random_get_int(0, 0, constants.MAP_HEIGHT - h - 1)
+        x = libtcod.random_get_int(0, 0, const.MAP_WIDTH - w - 1)
+        y = libtcod.random_get_int(0, 0, const.MAP_HEIGHT - h - 1)
 
         # "Rect" class makes rectangles easier to work with
         new_room = Rect(x, y, w, h)
@@ -261,31 +290,42 @@ def render_all():
 
     if fov_recompute:
         fov_recompute = False
-        libtcod.map_compute_fov(fov_map, player.x, player.y, constants.TORCH_RADIUS, constants.FOV_LIGHT_WALLS, constants.FOV_ALGO)
+        libtcod.map_compute_fov(fov_map, player.x, player.y, const.TORCH_RADIUS, const.FOV_LIGHT_WALLS, const.FOV_ALGO)
 
-        for y in range(constants.MAP_HEIGHT):
-            for x in range(constants.MAP_WIDTH):
+        for y in range(const.MAP_HEIGHT):
+            for x in range(const.MAP_WIDTH):
                 visible = libtcod.map_is_in_fov(fov_map, x, y)
                 wall = map[x][y].block_sight
                 if not visible:
                     if map[x][y].explored:
                         #it's out of the player's FOV
                         if wall:
-                            libtcod.console_set_char_background(constants.con, x, y, constants.color_dark_wall, libtcod.BKGND_SET)
+                            libtcod.console_set_char_background(const.con, x, y, const.color_dark_wall, libtcod.BKGND_SET)
                         else:
-                            libtcod.console_set_char_background(constants.con, x, y, constants.color_dark_ground, libtcod.BKGND_SET)
+                            libtcod.console_set_char_background(const.con, x, y, const.color_dark_ground, libtcod.BKGND_SET)
                 else:
                     #it's visible
                     if wall:
-                        libtcod.console_set_char_background(constants.con, x, y, constants.color_light_wall, libtcod.BKGND_SET )
+                        libtcod.console_set_char_background(const.con, x, y, const.color_light_wall, libtcod.BKGND_SET)
                     else:
-                        libtcod.console_set_char_background(constants.con, x, y, constants.color_light_ground, libtcod.BKGND_SET )
+                        libtcod.console_set_char_background(const.con, x, y, const.color_light_ground, libtcod.BKGND_SET)
                     map[x][y].explored = True
 
     for object in objects:
         object.draw()
 
-    libtcod.console_blit(constants.con, 0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, 0, 0, 0)
+    libtcod.console_blit(const.con, 0, 0, const.SCREEN_WIDTH, const.SCREEN_HEIGHT, 0, 0, 0)
+
+    # prepare to render the GUI panel
+    libtcod.console_set_default_background(const.panel, libtcod.black)
+    libtcod.console_clear(const.panel)
+
+    # show the player's stats
+    render_bar(1, 1, const.BAR_WIDTH, 'HP', 28, 50,
+               libtcod.light_red, libtcod.darker_red)
+
+    # blit the contents of "panel" to the root console
+    libtcod.console_blit(const.panel, 0, 0, const.SCREEN_WIDTH, const.PANEL_HEIGHT, 0, 0, const.PANEL_Y)
 
 ########################################################################################################################
 # GENERAL SET UP #######################################################################################################
@@ -301,9 +341,9 @@ objects = [player]
 
 make_map()
 
-fov_map = libtcod.map_new(constants.MAP_WIDTH, constants.MAP_HEIGHT)
-for y in range(constants.MAP_HEIGHT):
-    for x in range(constants.MAP_WIDTH):
+fov_map = libtcod.map_new(const.MAP_WIDTH, const.MAP_HEIGHT)
+for y in range(const.MAP_HEIGHT):
+    for x in range(const.MAP_WIDTH):
         libtcod.map_set_properties(fov_map, x, y, not map[x][y].block_sight, not map[x][y].blocked)
 
 fov_recompute = True

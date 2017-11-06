@@ -21,5 +21,5 @@ while not libtcod.console_is_window_closed():
 
     if setup.game_state == 'playing' and player_action != 'didnt-take-turn':
         for object in objects:
-            if object != setup.player:
-                print 'The ' + object.name + ' growls!'
+            if object.ai:
+                object.ai.take_turn()
