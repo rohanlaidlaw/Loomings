@@ -186,7 +186,6 @@ def place_objects(room):
 
 
 def looking_oracle():
-
     # return a string with the names of all objects under the mouse
     (x, y) = (look_cursor.x, look_cursor.y)
     (x, y) = (camera_x + x, camera_y + y)
@@ -520,10 +519,13 @@ def render_all():
 
 
 def initialize_fov():
+    """
+    The map is shrouded in fog unless a tile is deemed to be visible to the player. This is initialized here. The
+    FOV is effectively an overlaid map.
+    """
     global fov_recompute, fov_map
     fov_recompute = True
 
-    # create the FOV map, according to the generated map
     fov_map = libtcod.map_new(const.MAP_WIDTH, const.MAP_HEIGHT)
     for y in range(const.MAP_HEIGHT):
         for x in range(const.MAP_WIDTH):
@@ -532,13 +534,16 @@ def initialize_fov():
     libtcod.console_clear(const.con)
 
 def new_game():
+    """
+    The initialization of a new game takes place here. The player and their look cursor are created, the map is created
+    (but not yet rendered) and the FOV initialized. Other important game variables are set to their appropriate states,
+    such as the inventory and the game messages, which start empty.
+    """
     global player, look_cursor, looking, inventory, game_msgs, game_state
 
-    # create object representing the player
     player = Object(0, 0, '@', 'player', libtcod.white, blocks=True)
     look_cursor = Object(0, 0, 'X', 'look', libtcod.yellow, blocks=False)
 
-    # generate map (at this point it's not drawn to the screen)
     make_map()
     initialize_fov()
 
@@ -546,18 +551,19 @@ def new_game():
     looking = False
     inventory = []
 
-    # create the list of game messages and their colors, starts empty
     game_msgs = []
 
-    # a warm welcoming message!
-    message('Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.', libtcod.red)
+    message('Welcome stranger! Prepare to perish.', libtcod.red)
 
 def save_game():
-    # open a new empty shelve (possibly overwriting an old one) to write the game data
+    """
+    Saving an open game to a new empty shelf. The shelf is opened, and the locations and variable states are written
+    inside. This overwrites any previously saved information.
+    """
     file = shelve.open('savegame', 'n')
     file['map'] = map
     file['objects'] = objects
-    file['player_index'] = objects.index(player)  # index of player in objects list
+    file['player_index'] = objects.index(player)
     file['inventory'] = inventory
     file['game_msgs'] = game_msgs
     file['game_state'] = game_state
@@ -565,13 +571,16 @@ def save_game():
 
 
 def load_game():
-    # open the previously saved shelve and load the game data
+    """
+    Loading a shelved save. Effectively, a new game is initialized with the values of the old. Locations and variable
+    states are retrieved from the opened shelf.
+    """
     global map, objects, player, inventory, game_msgs, game_state
 
     file = shelve.open('savegame', 'r')
     map = file['map']
     objects = file['objects']
-    player = objects[file['player_index']]  # get index of player in objects list and access it
+    player = objects[file['player_index']]
     inventory = file['inventory']
     game_msgs = file['game_msgs']
     game_state = file['game_state']
@@ -583,7 +592,10 @@ def msgbox(text, width=50):
     menu(text, [], width)
 
 def main_menu():
-
+    """
+    The screen first accessed by the player. They may elect to play a new game, load an old one (save/load in this
+    project is handled by the package "shelve") or quit.
+    """
     while not libtcod.console_is_window_closed():
 
         #show the game's title, and some credits!
@@ -610,6 +622,17 @@ def main_menu():
             break
 
 def play_game():
+    """
+    The main loop of the game that operates as so:
+    1. Render the sprites.
+    2. Flush the console.
+    3. Clear objects at their old locations (for the purposes of sprite movement without leaving duplicates).
+    4. Handle player input.
+    5. If the exit button is detected, save the game and then break the loop.
+    6. Handle "monster" movement.
+        6.1. If the game is running and the player has taken a turn, go through all objects and operate them as their AI
+             demands, and then acknowledge that the NPC has taken a turn.
+    """
     global camera_x, camera_y, player_x, player_y
 
     player_action = None
@@ -617,22 +640,19 @@ def play_game():
     (camera_x, camera_y) = (0, 0)
 
     while not libtcod.console_is_window_closed():
-        # render the screen
         render_all()
 
         libtcod.console_flush()
 
-        # erase all objects at their old locations, before they move
         for object in objects:
             object.clear()
 
-        # handle keys and exit game if needed
         player_action = handle_keys()
+
         if player_action == 'exit':
             save_game()
             break
 
-        # let monsters take their turn
         if game_state == 'playing' and player_action != 'didnt-take-turn':
             for object in objects:
                 if object.ai:
