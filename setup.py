@@ -59,50 +59,6 @@ class Object:
         if x is not None:
             libtcod.console_put_char(const.con, x, y, ' ', libtcod.BKGND_NONE)
 
-class Object:
-    def __init__(self, x, y, char, name, color, blocks=False, ai=None):
-        self.name = name
-        self.blocks = blocks
-        self.x = x
-        self.y = y
-        self.char = char
-        self.color = color
-        self.ai = ai
-        if self.ai:  #let the AI component know who owns it
-            self.ai.owner = self
-
-    def move(self, dx, dy):
-        if not is_blocked(self.x + dx, self.y + dy):
-            self.x += dx
-            self.y += dy
-
-    def move_towards(self, target_x, target_y):
-        # vector from this object to the target, and distance
-        dx = target_x - self.x
-        dy = target_y - self.y
-        distance = math.sqrt(dx ** 2 + dy ** 2)
-
-        # normalize it to length 1 (preserving direction), then round it and
-        # convert to integer so the movement is restricted to the map grid
-        dx = int(round(dx / distance))
-        dy = int(round(dy / distance))
-        self.move(dx, dy)
-
-    def distance_to(self, other):
-        # return the distance to another object
-        dx = other.x - self.x
-        dy = other.y - self.y
-        return math.sqrt(dx ** 2 + dy ** 2)
-
-    def draw(self):
-        if libtcod.map_is_in_fov(fov_map, self.x, self.y):
-            libtcod.console_set_default_foreground(const.con, self.color)
-            libtcod.console_put_char(const.con, self.x, self.y, self.char, libtcod.BKGND_NONE)
-
-    def clear(self):
-        libtcod.console_put_char(const.con, self.x, self.y, ' ', libtcod.BKGND_NONE)
-
-
 class BasicNPC:
     # AI for a basic monster.
     def take_turn(self):
@@ -473,14 +429,14 @@ def move_camera(target_x, target_y):
     global camera_x, camera_y, fov_recompute
 
     # new camera coordinates (top-left corner of the screen relative to the map)
-    x = (target_x - const.CAMERA_WIDTH) / 2  # coordinates so that the target is at the center of the screen
-    y = (target_y - const.CAMERA_HEIGHT) / 2
+    x = target_x - const.CAMERA_WIDTH / 2  # coordinates so that the target is at the center of the screen
+    y = target_y - const.CAMERA_HEIGHT / 2
 
     # make sure the camera doesn't see outside the map
     if x < 0: x = 0
     if y < 0: y = 0
-    if x > const.MAP_WIDTH - const.CAMERA_WIDTH - 1: x = const.MAP_WIDTH - const.CAMERA_WIDTH - 1
-    if y > const.MAP_HEIGHT - const.CAMERA_HEIGHT - 1: y = const.MAP_HEIGHT - const.CAMERA_HEIGHT - 1
+    if x > const.MAP_WIDTH - const.CAMERA_WIDTH -1: x = const.MAP_WIDTH - const.CAMERA_WIDTH -1
+    if y > const.MAP_HEIGHT - const.CAMERA_HEIGHT -1: y = const.MAP_HEIGHT - const.CAMERA_HEIGHT -1
 
     if x != camera_x or y != camera_y: fov_recompute = True
 
