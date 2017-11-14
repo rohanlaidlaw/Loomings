@@ -8,14 +8,13 @@ A naval-themed roguelike set in a procedurally generated world, principally insp
 
 ## Getting Started
 ### Python and libtcod Versioning
-It is imperative that whichever version of Python 2.7 or libtcod 1.6 you wish to use, they are the same. If you have 64bit Python, you must also use 64bit libtcod. I have chosen to use 32bit libtcod and Python.
+A 32bit installation of both Python and libtcod is required.
 
 ### Installing
-The guide for precisely intalling libtcod and SDL2 can be followed here:
-http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod,_part_1\
+The guide for precisely installing libtcod and SDL2 can be followed [here](http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod,_part_1).
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Planning, Game Design
 ### Synopsis
