@@ -10,13 +10,20 @@ A naval-themed roguelike set in a procedurally generated world, principally insp
 ### Python and libtcod Versioning
 A 32bit installation of both Python and libtcod is required.
 
-### Installing
+### Installing Dependencies
 The guide for precisely installing libtcod and SDL2 can be followed [here](http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod,_part_1).
+
+## Testing
+### Installing Test Suite
+Unit tests are handled by [pytest](https://docs.pytest.org/en/latest/contents.html), which can be installed with `pip install -U pytest`, and the installation checked for sucess with `pytest --version`.
+
+### Running Unit Tests
+Unit testing is activated with the command `pytest` in the same directory as the unit tests. All unit tests contained within files named `test_*.py` or `*_test.py` in a given directory will be run. 
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Planning, Game Design
+## Planning & Game Design
 ### Synopsis
 Player assumes the role of a whaling vessel captain. They are tasked with making their fortune on the seas by hunting sperm whales for their treasured spermacetti. They must shrewdly pick their crew members and decide upon provisions, which manifest themselves as traditional roguelike RPG elements, but also assume more complex form, and then plot a course. While upon the seas, besides dealing with the daily upkeep such as food supplies and wind and sea conditions, the player must also deal with favourable or unfavourable circumstances that arise. The ultimate end-game is to hunt down and defeat Moby Dick, the white whale. 
 
