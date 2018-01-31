@@ -2,7 +2,8 @@
 from ctypes import *
 from libtcodpy import Color
 
-c_void = None
+# HACK for return types
+c_void = c_int
 
 def setup_protos(lib):
     #_lib.TCOD_line.restype=c_bool 
