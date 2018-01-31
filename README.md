@@ -1,4 +1,6 @@
 # Loomings
+[![Build Status](https://travis-ci.org/volsci/loomings.svg?branch=master)](https://travis-ci.org/volsci/loomings)
+
 A naval-themed roguelike set in a procedurally generated world, principally inspired by the maritime traditions of 19th century whaling and the writings of Herman Melville. Written in Python 2.7 using the libtcod library.
 
 ## Key References
