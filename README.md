@@ -25,6 +25,23 @@ Unit testing is activated with the command `pytest` in the same directory as the
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Current Progress & Todo
+* World map generation
+  * ~~Perlin Noise?~~
+  
+  
+    * Game takes place at sea, land is irrelevent besides coastline, so height maps & noise gen is unnecessary!
+  * Reversal of Orthodox Room Creation & Player Placement
+  
+  
+    * All that's required really is the existing room placement algo is reversed -- the rooms become impassable land, and the previous blocked off area becomes the open sea
+    * ~~Reverse Room Algo~~
+    * Random Player Coordinate Placement (Check for Open Tile)
+    * Change Room Algo to Cellular Automato to better represent landmass (ie. not squares)
+    * Check for an appropriate land/sea %, redo if too much land or too much water
+  
+* Testing
+
 ## Planning & Game Design
 ### Synopsis
 Player assumes the role of a whaling vessel captain. They are tasked with making their fortune on the seas by hunting sperm whales for their treasured spermacetti. They must shrewdly pick their crew members and decide upon provisions, which manifest themselves as traditional roguelike RPG elements, but also assume more complex form, and then plot a course. While upon the seas, besides dealing with the daily upkeep such as food supplies and wind and sea conditions, the player must also deal with favourable or unfavourable circumstances that arise. The ultimate end-game is to hunt down and defeat Moby Dick, the white whale. 
