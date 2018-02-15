@@ -311,21 +311,21 @@ def create_room(room):
     #go through the tiles in the rectangle and make them passable
     for x in range(room.x1 + 1, room.x2):
         for y in range(room.y1 + 1, room.y2):
-            map[x][y].blocked = False
-            map[x][y].block_sight = False
+            map[x][y].blocked = True
+            map[x][y].block_sight = True
 
 def create_h_tunnel(x1, x2, y):
     global map
     for x in range(min(x1, x2), max(x1, x2) + 1):
-        map[x][y].blocked = False
-        map[x][y].block_sight = False
+        map[x][y].blocked = True
+        map[x][y].block_sight = True
 
 def create_v_tunnel(y1, y2, x):
     global map
     #vertical tunnel
     for y in range(min(y1, y2), max(y1, y2) + 1):
-        map[x][y].blocked = False
-        map[x][y].block_sight = False
+        map[x][y].blocked = True
+        map[x][y].block_sight = True
 
 
 def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
@@ -364,7 +364,7 @@ def make_map():
     objects = [player, look_cursor]
 
     # fill map with "blocked" tiles
-    map = [[Tile(True)
+    map = [[Tile(False)
             for y in range(const.MAP_HEIGHT)]
            for x in range(const.MAP_WIDTH)]
 
@@ -400,8 +400,8 @@ def make_map():
 
             if num_rooms == 0:
                 # this is the first room, where the player starts at
-                player.x = new_x
-                player.y = new_y
+                player.x = 1
+                player.y = 1
             else:
                 # all rooms after the first:
                 # connect it to the previous room with a tunnel
