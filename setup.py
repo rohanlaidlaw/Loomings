@@ -314,20 +314,6 @@ def create_room(room):
             map[x][y].blocked = True
             map[x][y].block_sight = True
 
-def create_h_tunnel(x1, x2, y):
-    global map
-    for x in range(min(x1, x2), max(x1, x2) + 1):
-        map[x][y].blocked = True
-        map[x][y].block_sight = True
-
-def create_v_tunnel(y1, y2, x):
-    global map
-    #vertical tunnel
-    for y in range(min(y1, y2), max(y1, y2) + 1):
-        map[x][y].blocked = True
-        map[x][y].block_sight = True
-
-
 def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
     # render a bar (HP, experience, etc). first calculate the width of the bar
     bar_width = int(float(value) / maximum * total_width)
@@ -363,7 +349,7 @@ def make_map():
 
     objects = [player, look_cursor]
 
-    # fill map with "blocked" tiles
+    # fill map with "open" tiles (ocean)
     map = [[Tile(False)
             for y in range(const.MAP_HEIGHT)]
            for x in range(const.MAP_WIDTH)]
@@ -398,31 +384,24 @@ def make_map():
             # center coordinates of new room, will be useful later
             (new_x, new_y) = new_room.center()
 
-            if num_rooms == 0:
-                # this is the first room, where the player starts at
-                player.x = 1
-                player.y = 1
-            else:
-                # all rooms after the first:
-                # connect it to the previous room with a tunnel
-
-                # center coordinates of previous room
-                (prev_x, prev_y) = rooms[num_rooms - 1].center()
-
-                # draw a coin (random number that is either 0 or 1)
-                if libtcod.random_get_int(0, 0, 1) == 1:
-                    # first move horizontally, then vertically
-                    create_h_tunnel(prev_x, new_x, prev_y)
-                    create_v_tunnel(prev_y, new_y, new_x)
-                else:
-                    # first move vertically, then horizontally
-                    create_v_tunnel(prev_y, new_y, prev_x)
-                    create_h_tunnel(prev_x, new_x, new_y)
-
             # finally, append the new room to the list
             place_objects(new_room)
             rooms.append(new_room)
             num_rooms += 1
+
+    # Place the player on an open sea tile
+    player_placed = False
+    while not player_placed:
+        new_x_place = libtcod.random_get_int(0, 5, const.MAP_WIDTH)
+        new_y_place = libtcod.random_get_int(0, 5, const.MAP_HEIGHT)
+        
+        if not is_blocked(new_x_place, new_y_place):
+            player.x = new_x_place
+            player.y = new_y_place
+            player_placed = True
+
+
+
 
 
 def move_camera(target_x, target_y):

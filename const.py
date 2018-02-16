@@ -18,8 +18,8 @@ CAMERA_HEIGHT = 43
 MAP_WIDTH = 1000
 MAP_HEIGHT = 1000
 
-ROOM_MAX_SIZE = 10
-ROOM_MIN_SIZE = 6
+ROOM_MAX_SIZE = 50
+ROOM_MIN_SIZE = 25
 MAX_ROOMS = 30
 
 ########################################################################################################################
