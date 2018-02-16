@@ -25,6 +25,10 @@ Unit testing is activated with the command `pytest` in the same directory as the
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## State of the Game
+* Basic components of a Roguelike implemented: movement, camera, FOV, message bar & HUD, blocking even saving & loading
+* Player may freely traverse the "ocean", encountering large rectangular "continents", originally rooms but with a reversed algorithm
+
 ## Current Progress & Todo
 * World map generation
   * ~~Perlin Noise?~~
@@ -36,7 +40,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   
     * All that's required really is the existing room placement algo is reversed -- the rooms become impassable land, and the previous blocked off area becomes the open sea
     * ~~Reverse Room Algo~~
-    * Random Player Coordinate Placement (Check for Open Tile)
+    * ~~Random Player Coordinate Placement (Check for Open Tile)~~
     * Change Room Algo to Cellular Automato to better represent landmass (ie. not squares)
     * Check for an appropriate land/sea %, redo if too much land or too much water
   
