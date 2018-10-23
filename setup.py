@@ -17,7 +17,7 @@ class Object:
         self.char = char
         self.color = color
         self.ai = ai
-        if self.ai:  #let the AI component know who owns it
+        if self.ai:  # set ownership of the AI component
             self.ai.owner = self
 
     def move(self, dx, dy):
@@ -49,7 +49,7 @@ class Object:
             (x, y) = to_camera_coordinates(self.x, self.y)
 
             if x is not None:
-                # set the color and then draw the character that represents this object at its position
+                # set color and then draw the character that represents this object at its position
                 libtcod.console_set_default_foreground(const.con, self.color)
                 libtcod.console_put_char(const.con, x, y, self.char, libtcod.BKGND_NONE)
 
@@ -191,12 +191,12 @@ def looking_oracle():
     (x, y) = (look_cursor.x, look_cursor.y)
     (x, y) = (camera_x + x, camera_y + y)
 
-    #create a list with the names of all objects at the looking coordinates and in FOV
+    # create a list with the names of all objects at the looking coordinates and in FOV
     names = [obj.name for obj in objects
         if obj.name != 'look'
             if obj.x == x and obj.y == y and libtcod.map_is_in_fov(fov_map, obj.x, obj.y)]
 
-    names = ', '.join(names)  #join the names, separated by commas
+    names = ', '.join(names)  # join the names, separated by commas
     return names.capitalize()
 
 def is_blocked(x, y):
@@ -308,7 +308,7 @@ class Rect:
 
 def create_room(room):
     global map
-    #go through the tiles in the rectangle and make them passable
+    # make tiles in the rectangle passable
     for x in range(room.x1 + 1, room.x2):
         for y in range(room.y1 + 1, room.y2):
             map[x][y].blocked = True
@@ -389,7 +389,7 @@ def make_map():
             rooms.append(new_room)
             num_rooms += 1
 
-    # Place the player on an open sea tile
+    # place the player on an open sea tile
     player_placed = False
     while not player_placed:
         new_x_place = libtcod.random_get_int(0, 5, const.MAP_WIDTH)
@@ -478,7 +478,7 @@ def render_all():
     libtcod.console_set_default_background(const.panel, libtcod.black)
     libtcod.console_clear(const.panel)
 
-    #print the game messages, one line at a time
+    # print the game messages, one line at a time
     y = 1
     for (line, color) in game_msgs:
         libtcod.console_set_default_foreground(const.panel, color)
@@ -486,7 +486,7 @@ def render_all():
         y += 1
 
     if looking == True:
-        #display names of objects under the mouse
+        # display names of objects under the mouse
         libtcod.console_set_default_foreground(const.panel, libtcod.light_gray)
         libtcod.console_print_ex(const.panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, looking_oracle())
 
@@ -565,7 +565,7 @@ def main_menu():
 
     while not libtcod.console_is_window_closed():
 
-        #show the game's title, and some credits!
+        # show the game's title, and some credits!
         libtcod.console_set_default_foreground(0, libtcod.light_yellow)
         libtcod.console_print_ex(0, const.SCREEN_WIDTH/2, const.SCREEN_HEIGHT/2-4, libtcod.BKGND_NONE, libtcod.CENTER,
             'LOOMINGS')
@@ -578,7 +578,7 @@ def main_menu():
         if choice == 0:  # new game
             new_game()
             play_game()
-        if choice == 1:  #load last game
+        if choice == 1:  # load last game
             try:
                 load_game()
             except:

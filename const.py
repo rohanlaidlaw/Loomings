@@ -70,10 +70,10 @@ INVENTORY_WIDTH = 50
 
 panel = libtcod.console_new(SCREEN_WIDTH, PANEL_HEIGHT)
 
-#The bedrock layer of the library's screen handling. Where the UI and panels are drawn
+# the bedrock layer of the library's screen handling. Where the UI and panels are drawn
 libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'Loomings', False)
 
-#A buffer console whereupon the sprites will be written is drawn over the root console
+# a buffer console whereupon the sprites will be written is drawn over the root console
 con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
 libtcod.sys_set_fps(LIMIT_FPS)
