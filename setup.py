@@ -105,7 +105,6 @@ def handle_keys():
     elif key.vk == libtcod.KEY_ESCAPE:
             return 'exit'
 
-
     # Arrow Keys (Moving) ----------------------------------------------------------------------------------------------
     if game_state == 'playing':
         if looking == False:
@@ -152,8 +151,6 @@ def handle_keys():
 
             return 'didnt-take-turn'
 
-
-
 ########################################################################################################################
 # FUNCTIONS ############################################################################################################
 ########################################################################################################################
@@ -183,7 +180,6 @@ def place_objects(room):
                                  blocks=True, ai=ai_component)
 
             objects.append(monster)
-
 
 def looking_oracle():
 
@@ -232,7 +228,6 @@ def player_move_or_attack(dx, dy):
         player.move(dx, dy)
         fov_recompute = True
 
-
 def menu(header, options, width):
     if len(options) > 26: raise ValueError('Cannot have a menu with more than 26 options.')
 
@@ -274,7 +269,6 @@ def menu(header, options, width):
     index = key.c - ord('a')
     if index >= 0 and index < len(options): return index
     return None
-
 
 def inventory_menu(header):
     # show a menu with each item of the inventory as an option
@@ -330,7 +324,6 @@ def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
     libtcod.console_set_default_foreground(const.panel, libtcod.white)
     libtcod.console_print_ex(const.panel, x + total_width / 2, y, libtcod.BKGND_NONE, libtcod.CENTER,
                              name + ': ' + str(value) + '/' + str(maximum))
-
 
 def message(new_msg, color=libtcod.white):
     # split the message if necessary, among multiple lines
@@ -399,10 +392,6 @@ def make_map():
             player.x = new_x_place
             player.y = new_y_place
             player_placed = True
-
-
-
-
 
 def move_camera(target_x, target_y):
     global camera_x, camera_y, fov_recompute
@@ -497,7 +486,6 @@ def render_all():
     # blit the contents of "panel" to the root console
     libtcod.console_blit(const.panel, 0, 0, const.SCREEN_WIDTH, const.PANEL_HEIGHT, 0, 0, const.PANEL_Y)
 
-
 def initialize_fov():
     global fov_recompute, fov_map
     fov_recompute = True
@@ -541,7 +529,6 @@ def save_game():
     file['game_msgs'] = game_msgs
     file['game_state'] = game_state
     file.close()
-
 
 def load_game():
     # open the previously saved shelve and load the game data
