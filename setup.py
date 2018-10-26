@@ -182,7 +182,6 @@ def place_objects(room):
             objects.append(monster)
 
 def looking_oracle():
-
     # return a string with the names of all objects under the mouse
     (x, y) = (look_cursor.x, look_cursor.y)
     (x, y) = (camera_x + x, camera_y + y)
